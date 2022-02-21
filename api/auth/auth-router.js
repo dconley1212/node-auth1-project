@@ -1,6 +1,13 @@
 // Require `checkUsernameFree`, `checkUsernameExists` and `checkPasswordLength`
 // middleware functions from `auth-middleware.js`. You will need them here!
 const router = require("express").Router();
+const bcrypt = require("bcryptjs");
+const Users = require("../users/users-model");
+const {
+  checkUsernameFree,
+  checkPasswordLength,
+  checkUsernameExists,
+} = require("./auth-middleware");
 
 /**
   1 [POST] /api/auth/register { "username": "sue", "password": "1234" }
@@ -24,9 +31,24 @@ const router = require("express").Router();
     "message": "Password must be longer than 3 chars"
   }
  */
-router.post("/register", async (req, res, next) => {
-  res.json("register wired");
-});
+router.post(
+  "/register",
+  checkUsernameFree,
+  checkPasswordLength,
+  async (req, res, next) => {
+    try {
+      const { username, password } = req.body;
+      const hash = bcrypt.hashSync(password, 8);
+      const user = { username, password: hash };
+      const createdUser = await Users.add(user);
+      res
+        .status(200)
+        .json({ user_id: createdUser.user_id, username: createdUser.username });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 /**
   2 [POST] /api/auth/login { "username": "sue", "password": "1234" }
 
@@ -42,8 +64,19 @@ router.post("/register", async (req, res, next) => {
     "message": "Invalid credentials"
   }
  */
-router.post("/login", async (req, res, next) => {
-  res.json("login wired");
+router.post("/login", checkUsernameExists, async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    const [user] = await Users.findBy({ username });
+    if (bcrypt.compareSync(password, user.password)) {
+      req.session.user = user;
+      res.status(200).json({ message: "Welcome sue!" });
+    } else {
+      next({ status: 401, message: "Invalid credentials" });
+    }
+  } catch (err) {
+    next(err);
+  }
 });
 
 /**

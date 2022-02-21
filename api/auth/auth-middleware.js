@@ -9,7 +9,7 @@ const db = require("../../data/db-config");
   }
 */
 function restricted(req, res, next) {
-  if (req.body.session) {
+  if (req.session.user) {
     next();
   } else {
     next({ status: 401, message: "You shall not pass!" });
@@ -24,12 +24,16 @@ function restricted(req, res, next) {
     "message": "Username taken"
   }
 */
-function checkUsernameFree(req, res, next) {
-  const usernameExists = db("users").where("username", req.body.username);
-  if (usernameExists) {
-    next({ status: 422, message: "Username taken" });
-  } else {
-    next();
+async function checkUsernameFree(req, res, next) {
+  try {
+    const usernameExists = db("users").where("username", req.body.username);
+    if (usernameExists) {
+      next({ status: 422, message: "Username taken" });
+    } else {
+      next();
+    }
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -41,7 +45,18 @@ function checkUsernameFree(req, res, next) {
     "message": "Invalid credentials"
   }
 */
-function checkUsernameExists(req, res, next) {}
+async function checkUsernameExists(req, res, next) {
+  try {
+    const usernameExists = db("users").where("username", req.body.username);
+    if (!usernameExists) {
+      next({ status: 401, message: "Invalid credentials" });
+    } else {
+      next();
+    }
+  } catch (err) {
+    next(err);
+  }
+}
 
 /*
   If password is missing from req.body, or if it's 3 chars or shorter
