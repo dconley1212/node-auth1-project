@@ -41,9 +41,8 @@ router.post(
       const hash = bcrypt.hashSync(password, 8);
       const user = { username, password: hash };
       const createdUser = await Users.add(user);
-      res
-        .status(200)
-        .json({ user_id: createdUser.user_id, username: createdUser.username });
+      console.log(createdUser);
+      res.status(200).json(createdUser);
     } catch (err) {
       next(err);
     }
@@ -70,7 +69,7 @@ router.post("/login", checkUsernameExists, async (req, res, next) => {
     const [user] = await Users.findBy({ username });
     if (bcrypt.compareSync(password, user.password)) {
       req.session.user = user;
-      res.status(200).json({ message: "Welcome sue!" });
+      res.status(200).json({ message: `Welcome ${username}` });
     } else {
       next({ status: 401, message: "Invalid credentials" });
     }
