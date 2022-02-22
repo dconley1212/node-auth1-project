@@ -5,11 +5,10 @@ const db = require("../../data/db-config");
  */
 
 async function find() {
-  const users = await db("users").select("id", "username").orderBy("user_id");
-  return {
-    user_id: users.user_id,
-    username: users.username,
-  };
+  const users = await db("users")
+    .select("user_id", "username")
+    .orderBy("user_id");
+  return users;
 }
 
 /**
